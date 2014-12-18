@@ -11,6 +11,7 @@ Long-read validation of BEDPE structural variation
 
 Dependencies: [bedtools](https://github.com/arq5x/bedtools2)
 
+Clone the git repository
 ```
 git clone git@github.com:hall-lab/long-read-validation.git
 ```
