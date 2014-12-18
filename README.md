@@ -26,8 +26,8 @@ Run the validation script. Note that column 11 of the BEDPE file must contain th
 
 This appends two columns to the BEDPE file:
 
-    * Number of supporting Moleculo split reads
-    * Number of supporting PacBio split reads
+* Number of supporting Moleculo split reads
+* Number of supporting PacBio split reads
 
 ```
 longReadValidate \
