@@ -17,8 +17,8 @@ OPTIONS:
     -h      Show this message
     -i      BEDPE input file name
     -s      slop (default: 0)
-    -m      Moleculo file (Default /mnt/hall13_local/cc2qe/na12878_pacbio...)
-    -p      Pacbio file (Default /mnt/hall13_local/cc2qe/na12878_moleculo...)
+    -m      Moleculo file
+    -p      PacBio file
     -k      keep temporary files
 
 EOF
@@ -32,8 +32,8 @@ then
 fi
 
 BIN_DIR=$( dirname $0 )
-PB="/mnt/hall13_local/cc2qe/na12878_pacbio/NA12878.pacbio.splitreads.excldups.breakpoint.dels.bedpe.gz"
-MO="/mnt/hall13_local/cc2qe/na12878_moleculo/NA12878.moleculo.splitreads.excldups.breakpoint.dels.bedpe.gz"
+PB=
+MO=
 INPUT=
 SLOP=0
 KEEP=0
@@ -68,8 +68,12 @@ do
     esac
 done
 
-# if [[ ! -f $PB ]] || 
-# then
+if [[ ! -f $PB ]] || [[ ! -f $MO ]]
+then
+    usage
+    echo -e "Error: -p and -m are required\n"
+    exit 1
+fi
 
 # calculate the number of columns in the input file
 NCOL=`head -n 1 $INPUT | awk '{ print NF }'`
@@ -98,8 +102,9 @@ cat $INPUT.p.slop$SLOP.tmp \
     | awk '{ if ($NF=="NA") { $NF=0 } print $0 }' OFS="\t" \
     | $BIN_DIR/zjoin_empty -r -1 7 -2 7 -a stdin -b <(cat $INPUT.m.slop$SLOP.tmp | awk '$18==$29' | cut -f 19- | sort -k7,7n | groupBy -g 1,2,3,4,5,6 -c 1 -o count -full) \
     | cut -f -$(($NCOL+1)),$(($NCOL+$NCOL+2)) \
-    | awk '{ if ($NF=="NA") { $NF=0 } print $0 }' OFS="\t" \
-    > $INPUT.slop$SLOP.val
+    | awk '{ if ($NF=="NA") { $NF=0 } print $0 }' OFS="\t"
+
+    # > $INPUT.slop$SLOP.val
 
 if [[ "$KEEP" -eq 0 ]]
 then
