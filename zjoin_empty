@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+# edited by colby 2014-03-18 so that zjoin -r against an empty file doesn't throw and error
+
+import sys
+import string
+from optparse import OptionParser
+
+
+def zjoin(aFile, bFile, aCol, bCol, notA, delim, allRows, emptyFill):	
+	bCol = bCol - 1
+	aCol = aCol - 1	
+	bDict = {}		
+	if bFile == "stdin":
+		bData = sys.stdin
+	else:
+		bData = open(bFile, 'r')
+	fakeCols = [ emptyFill ] * 100
+	for bLine in bData:
+		b = bLine.strip().split(delim)
+		# numCols = len(b)
+		fakeCols = []
+		for i in range(0,len(b)):
+		    fakeCols.append(emptyFill)
+		#print fakeCols
+		#print str(i)
+		try:
+			if b[bCol] in bDict:
+				bDict[b[bCol]].append(b)
+			else:
+				bDict[b[bCol]] = []			
+				bDict[b[bCol]].append(b)
+		except IndexError, e:
+			print >> sys.stderr, "Column " + str(bCol+1) + \
+					" does not exist in file b:"
+			print >> sys.stderr, bLine,
+			return 2
+		
+	if aFile == "stdin":
+		aData = sys.stdin
+	else:
+		aData = open(aFile, 'r')
+
+	for aLine in aData:
+		a = aLine.strip().split(delim)
+		try:
+			if a[aCol] in bDict:
+				if (not notA): 
+					for b in bDict[a[aCol]]:
+						print string.join(a, delim) + delim + string.join(b, delim)
+			elif allRows:
+			    print string.join(a, delim) + delim +  string.join(fakeCols, delim)
+			else:
+			    if (notA):
+				    print string.join(a, delim) 
+
+		except IndexError, e:
+			print >> sys.stderr, "Column " + str(aCol+1) + \
+					" does not exist in file a:"
+			print >> sys.stderr, aLine,
+			return 2
+		
+class Usage(Exception):
+	def __init__(self, msg):
+		self.msg = msg		
+
+def main():
+	usage = """%prog -a <aFile>  -b <aFile>  -1 <aFile>  -2 <aFile>  -d <aFile>
+
+zjoin version 1.1
+Authors: Aaron Quinlan and Ira Hall	
+join substitute
+	"""
+	parser = OptionParser(usage)
+	
+	parser.add_option("-a", "--aFile", dest="aFile", 
+		help="A file or standard input (-a stdin). This file is processed line by line",
+		metavar="FILE")
+	
+	parser.add_option("-b", "--bFile", dest="bFile", 
+		help="A file or standard input (-b stdin). This file is loaded into memory - use smaller file",
+		metavar="FILE")
+
+	parser.add_option("-1", "--aCol", dest="aCol", default=1, type="int",
+		help="the colum for the a file.",
+		metavar="INT")
+	
+	parser.add_option("-2", "--bCol", dest="bCol", default=1, type="int",
+		help="the column for the b file",
+		metavar="INT")
+	
+	parser.add_option("-d", "--delim", dest="delim", default="\t", type="str",
+		help="the delimiter; default = tab",
+		metavar="STR")
+
+	parser.add_option("-v", "--notA", action="store_true", dest="notA",
+		help="print all rows in aFile that do not join with bFile")
+
+	parser.add_option("-r", "--allRows", action="store_true", dest="allRows",
+		help="print all rows in aFile; if match, add B cols; if not, add NA (or text specified by -f)")
+
+	parser.add_option("-e", "--emptyFill", dest="emptyFill", default="NA", type="str",
+		help="what to fill empty columns with when -r is used; default = NA",
+		metavar="STR")
+
+	(opts, args) = parser.parse_args()
+
+	if opts.aFile is None:
+		parser.print_help()
+		print
+	else:
+		zjoin(opts.aFile, opts.bFile, opts.aCol, opts.bCol, opts.notA, opts.delim, opts.allRows, opts.emptyFill)
+		
+if __name__ == "__main__":
+	try:
+		main()
+	except IOError, e:
+		if e.errno != 32: # ignore SIGPIPE
+			raise

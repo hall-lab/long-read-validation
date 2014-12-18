@@ -31,12 +31,10 @@ then
     exit
 fi
 
-VERBOSE=
-FILENAME=
-
+BIN_DIR=$( dirname $0 )
 PB="/mnt/hall13_local/cc2qe/na12878_pacbio/NA12878.pacbio.splitreads.excldups.breakpoint.dels.bedpe.gz"
 MO="/mnt/hall13_local/cc2qe/na12878_moleculo/NA12878.moleculo.splitreads.excldups.breakpoint.dels.bedpe.gz"
-L=
+INPUT=
 SLOP=0
 KEEP=0
 
@@ -55,7 +53,7 @@ do
             PB=$OPTARG
             ;;
         i)
-            L=$OPTARG
+            INPUT=$OPTARG
             ;;
 	s)
 	    SLOP=$OPTARG
@@ -74,36 +72,36 @@ done
 # then
 
 # calculate the number of columns in the input file
-NCOL=`head -n 1 $L | awk '{ print NF }'`
+NCOL=`head -n 1 $INPUT | awk '{ print NF }'`
 
-pairToPair -type both -is -slop $SLOP -a $PB -b $L \
+pairToPair -type both -is -slop $SLOP -a $PB -b $INPUT \
     | awk '! array[$0]++' \
-    > $L.p.slop$SLOP.tmp
+    > $INPUT.p.slop$SLOP.tmp
 
-cat $L.p.slop$SLOP.tmp | sort -k 25 > $L.p.slop$SLOP.tmp.sort
+cat $INPUT.p.slop$SLOP.tmp | sort -k 25 > $INPUT.p.slop$SLOP.tmp.sort
 
-cat $L.p.slop$SLOP.tmp.sort \
-    | /mnt/thor_pool1/user_data/rl6sf/src/lumpy_analysis/truth/filter_pb.py \
-    > $L.p.slop$SLOP.tmp
+cat $INPUT.p.slop$SLOP.tmp.sort \
+    | $BIN_DIR/filter_pb.py \
+    > $INPUT.p.slop$SLOP.tmp
 
-pairToPair -type both -is -slop $SLOP -a $MO -b $L \
+pairToPair -type both -is -slop $SLOP -a $MO -b $INPUT \
     | awk '! array[$0]++' \
-    > $L.m.slop$SLOP.tmp
+    > $INPUT.m.slop$SLOP.tmp
 
-cat $L.p.slop$SLOP.tmp \
+cat $INPUT.p.slop$SLOP.tmp \
     | awk '$18==$29' \
     | cut -f 19- \
     | sort -k7,7n \
     | groupBy -g 1,2,3,4,5,6 -c 1 -o count -full \
-    | /mnt/hall14_local/cc2qe/NA12878_speedseq_2014-08-14/sv_longread_validation_2014-10-01/permutation_test/zjoin_empty -r -a $L -b stdin -1 7 -2 7 \
+    | $BIN_DIR/zjoin_empty -r -a $INPUT -b stdin -1 7 -2 7 \
     | cut -f -$NCOL,$(($NCOL+$NCOL+1)) \
     | awk '{ if ($NF=="NA") { $NF=0 } print $0 }' OFS="\t" \
-    | /mnt/hall14_local/cc2qe/NA12878_speedseq_2014-08-14/sv_longread_validation_2014-10-01/permutation_test/zjoin_empty -r -1 7 -2 7 -a stdin -b <(cat $L.m.slop$SLOP.tmp | awk '$18==$29' | cut -f 19- | sort -k7,7n | groupBy -g 1,2,3,4,5,6 -c 1 -o count -full) \
+    | $BIN_DIR/zjoin_empty -r -1 7 -2 7 -a stdin -b <(cat $INPUT.m.slop$SLOP.tmp | awk '$18==$29' | cut -f 19- | sort -k7,7n | groupBy -g 1,2,3,4,5,6 -c 1 -o count -full) \
     | cut -f -$(($NCOL+1)),$(($NCOL+$NCOL+2)) \
     | awk '{ if ($NF=="NA") { $NF=0 } print $0 }' OFS="\t" \
-    > $L.slop$SLOP.val
+    > $INPUT.slop$SLOP.val
 
 if [[ "$KEEP" -eq 0 ]]
 then
-    rm $L.p.slop$SLOP.tmp $L.m.slop$SLOP.tmp $L.p.slop$SLOP.tmp.sort
+    rm $INPUT.p.slop$SLOP.tmp $INPUT.m.slop$SLOP.tmp $INPUT.p.slop$SLOP.tmp.sort
 fi
