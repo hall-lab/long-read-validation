@@ -25,8 +25,10 @@ wget http://colbychiang.com/hall/long-read-validation/NA12878.pacbio.splitreads.
 Run the validation script. Note that column 11 of the BEDPE file must contain the type of SV (DEL, DUP, INV, or INT)
 
 This appends two columns to the BEDPE file:
+
     * Number of supporting Moleculo split reads
     * Number of supporting PacBio split reads
+
 ```
 longReadValidate \
     -i example/NA12878.sv.bedpe \
