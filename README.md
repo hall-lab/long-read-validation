@@ -35,7 +35,7 @@ longReadValidate \
     > NA12878.sv.val.bedpe
 ```
 
-For [Layer et al.](http://genomebiology.com/2014/15/6/R84) we required at least 1 Moleculo split read or at least 2
+For [Layer _et al._](http://genomebiology.com/2014/15/6/R84) we required at least 1 Moleculo split read or at least 2
 PacBio split reads
 ```
 cat NA12878.sv.val.bedpe | awk '$(NF-1)>=1 || $NF>=2' | wc -l
