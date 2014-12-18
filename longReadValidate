@@ -1,0 +1,109 @@
+#!/bin/bash
+
+############################################################
+#  Program:
+#  Author :
+############################################################
+
+
+## BEGIN SCRIPT
+usage()
+{
+    cat << EOF
+
+usage: $0 OPTIONS
+
+OPTIONS:
+    -h      Show this message
+    -i      BEDPE input file name
+    -s      slop (default: 0)
+    -m      Moleculo file (Default /mnt/hall13_local/cc2qe/na12878_pacbio...)
+    -p      Pacbio file (Default /mnt/hall13_local/cc2qe/na12878_moleculo...)
+    -k      keep temporary files
+
+EOF
+}
+
+# Show usage when there are no arguments.
+if test -z "$1"
+then
+    usage
+    exit
+fi
+
+VERBOSE=
+FILENAME=
+
+PB="/mnt/hall13_local/cc2qe/na12878_pacbio/NA12878.pacbio.splitreads.excldups.breakpoint.dels.bedpe.gz"
+MO="/mnt/hall13_local/cc2qe/na12878_moleculo/NA12878.moleculo.splitreads.excldups.breakpoint.dels.bedpe.gz"
+L=
+SLOP=0
+KEEP=0
+
+# Check options passed in.
+while getopts "h m:p:i:s:k" OPTION
+do
+    case $OPTION in
+        h)
+            usage
+            exit 1
+            ;;
+        m)
+            MO=$OPTARG
+            ;;
+        p)
+            PB=$OPTARG
+            ;;
+        i)
+            L=$OPTARG
+            ;;
+	s)
+	    SLOP=$OPTARG
+	    ;;
+	k)
+	    KEEP=1
+	    ;;
+        ?)
+            usage
+            exit
+            ;;
+    esac
+done
+
+# if [[ ! -f $PB ]] || 
+# then
+
+# calculate the number of columns in the input file
+NCOL=`head -n 1 $L | awk '{ print NF }'`
+
+pairToPair -type both -is -slop $SLOP -a $PB -b $L \
+    | awk '! array[$0]++' \
+    > $L.p.slop$SLOP.tmp
+
+cat $L.p.slop$SLOP.tmp | sort -k 25 > $L.p.slop$SLOP.tmp.sort
+
+cat $L.p.slop$SLOP.tmp.sort \
+    | /mnt/thor_pool1/user_data/rl6sf/src/lumpy_analysis/truth/filter_pb.py \
+    > $L.p.slop$SLOP.tmp
+
+pairToPair -type both -is -slop $SLOP -a $MO -b $L \
+    | awk '! array[$0]++' \
+    > $L.m.slop$SLOP.tmp
+
+cat $L.p.slop$SLOP.tmp \
+    | awk '$18==$29' \
+    | cut -f 19- \
+    | sort -k7,7n \
+    | groupBy -g 1,2,3,4,5,6 -c 1 -o count -full \
+    | /mnt/hall14_local/cc2qe/NA12878_speedseq_2014-08-14/sv_longread_validation_2014-10-01/permutation_test/zjoin_empty -r -a $L -b stdin -1 7 -2 7 \
+    | cut -f -$NCOL,$(($NCOL+$NCOL+1)) \
+    | awk '{ if ($NF=="NA") { $NF=0 } print $0 }' OFS="\t" \
+    | /mnt/hall14_local/cc2qe/NA12878_speedseq_2014-08-14/sv_longread_validation_2014-10-01/permutation_test/zjoin_empty -r -1 7 -2 7 -a stdin -b <(cat $L.m.slop$SLOP.tmp | awk '$18==$29' | cut -f 19- | sort -k7,7n | groupBy -g 1,2,3,4,5,6 -c 1 -o count -full) \
+    | cut -f -$(($NCOL+1)),$(($NCOL+$NCOL+2)) \
+    | awk '{ if ($NF=="NA") { $NF=0 } print $0 }' OFS="\t" \
+    > $L.slop$SLOP.val
+
+if [[ "$KEEP" -eq 0 ]]
+then
+    rm $L.p.slop$SLOP.tmp $L.m.slop$SLOP.tmp $L.p.slop$SLOP.tmp.sort
+fi
