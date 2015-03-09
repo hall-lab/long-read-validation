@@ -34,14 +34,15 @@ longReadValidate \
     -i example/NA12878.sv.bedpe \
     -m NA12878.moleculo.splitreads.excldups.breakpoint.bedpe.gz \
     -p NA12878.pacbio.splitreads.excldups.breakpoint.bedpe.gz \
+    -s 5 \
     > NA12878.sv.val.bedpe
 ```
 
 For [Layer _et al._](http://genomebiology.com/2014/15/6/R84) we required at least 1 Moleculo split read or at least 2
-PacBio split reads
+PacBio split reads, with slop of 5.
 ```
 cat NA12878.sv.val.bedpe | awk '$(NF-1)>=1 || $NF>=2' | wc -l
-# 2414
+# 2508
 ```
 
 ## Usage
