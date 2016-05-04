@@ -66,8 +66,8 @@ The following commands demonstrate how NA12878.moleculo.splitreads.excldups.brea
 ```
 # ===============================================
 # 0. Requirements
-# https://github.com/hall-lab/sv-tools/blob/master/splitterToBreakpoint
-# https://github.com/hall-lab/sv-tools/blob/master/splitReadSamToBedpe
+# https://github.com/hall-lab/long-read-validation/blob/master/splitterToBreakpoint
+# https://github.com/hall-lab/long-read-validation/blob/master/splitReadSamToBedpe
 
 
 # ===============================================
