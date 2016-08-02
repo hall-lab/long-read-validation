@@ -119,6 +119,7 @@ cat NA12878.pacbio.realign.bam.readlength.stats
 # variance: 7636809.92441
 
 # d. Convert the split reads to bedpe format
+# BAM file must be sorted by queryname
 # svtools commit: 73bd62d59deaecb03c0467e1031a02e31709a402
 time sambamba view -h -F "not duplicate" NA12878.pacbio.realign.bam \
     | ~/code/svtools/splitReadSamToBedpe -i stdin \
